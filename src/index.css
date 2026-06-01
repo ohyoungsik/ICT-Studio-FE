@@ -1,0 +1,22 @@
+body {
+  margin: 0;
+  font-family: system-ui, sans-serif;
+  background: #f8fafc;
+  color: #111827;
+}
+
+.app-container {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+}
+
+header {
+  text-align: center;
+  background: white;
+  border-radius: 1rem;
+  padding: 2rem;
+  box-shadow: 0 15px 40px rgba(15, 23, 42, 0.08);
+}
