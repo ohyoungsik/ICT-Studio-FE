@@ -22,6 +22,13 @@ export function MainLayout({ activePath, children, onNavigate }: MainLayoutProps
             Tickets
           </button>
           <button
+            className={activePath === '/my-tickets' ? 'is-active' : undefined}
+            type="button"
+            onClick={() => onNavigate('/my-tickets')}
+          >
+            My Tickets
+          </button>
+          <button
             className={activePath === '/finops-dashboard' ? 'is-active' : undefined}
             type="button"
             onClick={() => onNavigate('/finops-dashboard')}
