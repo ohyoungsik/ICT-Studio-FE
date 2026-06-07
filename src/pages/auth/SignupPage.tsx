@@ -1,5 +1,5 @@
 import React from 'react';
-import { signup } from '../../services/authService';
+import { signup } from '../../services/auth.service';
 
 type SignupPageProps = {
   onNavigate: (path: string) => void;
@@ -74,94 +74,101 @@ export function SignupPage({ onNavigate }: SignupPageProps) {
 
   return (
     <main className="auth-page">
-      <section className="auth-panel" aria-labelledby="signup-title">
-        <div className="auth-copy">
-          <p className="auth-eyebrow">FinOps 대시보드</p>
-          <h1 id="signup-title">회원가입</h1>
-          <p>현재는 로컬 모의 흐름으로 가입한 뒤 로그인 화면으로 이동합니다.</p>
+      <section className="auth-shell" aria-labelledby="signup-title">
+        <div className="auth-brand">
+          <p className="auth-brand__eyebrow">ICT Ticketing</p>
+          <h1>빠르게 시작하는 티켓 예매 운영</h1>
+          <p>계정을 만든 뒤 로그인 화면에서 티켓팅 페이지로 이동합니다.</p>
         </div>
 
-        <form className="auth-form" onSubmit={handleSubmit} noValidate>
-          <label>
-            <span>이름</span>
-            <input
-              autoComplete="name"
-              type="text"
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-              aria-invalid={Boolean(errors.name)}
-              aria-describedby={errors.name ? 'signup-name-error' : undefined}
-            />
-            {errors.name ? (
-              <small id="signup-name-error" className="field-error">
-                {errors.name}
-              </small>
-            ) : null}
-          </label>
+        <div className="auth-card">
+          <div className="auth-copy">
+            <p className="auth-eyebrow">회원가입</p>
+            <h2 id="signup-title">새 계정 만들기</h2>
+          </div>
 
-          <label>
-            <span>이메일</span>
-            <input
-              autoComplete="email"
-              inputMode="email"
-              type="email"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              aria-invalid={Boolean(errors.email)}
-              aria-describedby={errors.email ? 'signup-email-error' : undefined}
-            />
-            {errors.email ? (
-              <small id="signup-email-error" className="field-error">
-                {errors.email}
-              </small>
-            ) : null}
-          </label>
+          <form className="auth-form" onSubmit={handleSubmit} noValidate>
+            <label>
+              <span>이름</span>
+              <input
+                autoComplete="name"
+                type="text"
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+                aria-invalid={Boolean(errors.name)}
+                aria-describedby={errors.name ? 'signup-name-error' : undefined}
+              />
+              {errors.name ? (
+                <small id="signup-name-error" className="field-error">
+                  {errors.name}
+                </small>
+              ) : null}
+            </label>
 
-          <label>
-            <span>비밀번호</span>
-            <input
-              autoComplete="new-password"
-              type="password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              aria-invalid={Boolean(errors.password)}
-              aria-describedby={errors.password ? 'signup-password-error' : undefined}
-            />
-            {errors.password ? (
-              <small id="signup-password-error" className="field-error">
-                {errors.password}
-              </small>
-            ) : null}
-          </label>
+            <label>
+              <span>이메일</span>
+              <input
+                autoComplete="email"
+                inputMode="email"
+                type="email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                aria-invalid={Boolean(errors.email)}
+                aria-describedby={errors.email ? 'signup-email-error' : undefined}
+              />
+              {errors.email ? (
+                <small id="signup-email-error" className="field-error">
+                  {errors.email}
+                </small>
+              ) : null}
+            </label>
 
-          <label>
-            <span>비밀번호 확인</span>
-            <input
-              autoComplete="new-password"
-              type="password"
-              value={confirmPassword}
-              onChange={(event) => setConfirmPassword(event.target.value)}
-              aria-invalid={Boolean(errors.confirmPassword)}
-              aria-describedby={errors.confirmPassword ? 'signup-confirm-error' : undefined}
-            />
-            {errors.confirmPassword ? (
-              <small id="signup-confirm-error" className="field-error">
-                {errors.confirmPassword}
-              </small>
-            ) : null}
-          </label>
+            <label>
+              <span>비밀번호</span>
+              <input
+                autoComplete="new-password"
+                type="password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                aria-invalid={Boolean(errors.password)}
+                aria-describedby={errors.password ? 'signup-password-error' : undefined}
+              />
+              {errors.password ? (
+                <small id="signup-password-error" className="field-error">
+                  {errors.password}
+                </small>
+              ) : null}
+            </label>
 
-          <button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? '가입 중...' : '회원가입'}
-          </button>
-        </form>
+            <label>
+              <span>비밀번호 확인</span>
+              <input
+                autoComplete="new-password"
+                type="password"
+                value={confirmPassword}
+                onChange={(event) => setConfirmPassword(event.target.value)}
+                aria-invalid={Boolean(errors.confirmPassword)}
+                aria-describedby={errors.confirmPassword ? 'signup-confirm-error' : undefined}
+              />
+              {errors.confirmPassword ? (
+                <small id="signup-confirm-error" className="field-error">
+                  {errors.confirmPassword}
+                </small>
+              ) : null}
+            </label>
 
-        <p className="auth-switch">
-          이미 계정이 있으신가요?{' '}
-          <button type="button" onClick={() => onNavigate('/login')}>
-            로그인
-          </button>
-        </p>
+            <button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? '가입 중...' : '회원가입'}
+            </button>
+          </form>
+
+          <p className="auth-switch">
+            이미 계정이 있으신가요?{' '}
+            <button type="button" onClick={() => onNavigate('/login')}>
+              로그인
+            </button>
+          </p>
+        </div>
       </section>
     </main>
   );

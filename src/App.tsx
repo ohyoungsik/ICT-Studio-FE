@@ -1,6 +1,8 @@
 import React from 'react';
+import { MainLayout } from './layouts/MainLayout';
 import { LoginPage } from './pages/auth/LoginPage';
 import { SignupPage } from './pages/auth/SignupPage';
+import { TicketPage } from './pages/Tickets/TicketPage';
 
 const FinOpsDashboard = React.lazy(() => import('./pages/finops'));
 
@@ -34,7 +36,7 @@ function App() {
     };
   }, []);
 
-  if (path === '/login') {
+  if (path === '/' || path === '/login') {
     return <LoginPage onNavigate={navigate} />;
   }
 
@@ -42,30 +44,25 @@ function App() {
     return <SignupPage onNavigate={navigate} />;
   }
 
-  if (path === '/dashboard' || path === '/finops-dashboard') {
+  if (path === '/tickets') {
     return (
-      <React.Suspense fallback={null}>
-        <FinOpsDashboard />
-      </React.Suspense>
+      <MainLayout activePath={path} onNavigate={navigate}>
+        <TicketPage />
+      </MainLayout>
     );
   }
 
-  return (
-    <div className="app-container">
-      <header>
-        <h1>FinOps 대시보드</h1>
-        <p>로그인하거나 계정을 만든 뒤 계속 진행하세요.</p>
-        <nav className="home-actions" aria-label="인증 링크">
-          <button type="button" onClick={() => navigate('/login')}>
-            로그인
-          </button>
-          <button type="button" onClick={() => navigate('/signup')}>
-            회원가입
-          </button>
-        </nav>
-      </header>
-    </div>
-  );
+  if (path === '/finops-dashboard' || path === '/dashboard') {
+    return (
+      <MainLayout activePath="/finops-dashboard" onNavigate={navigate}>
+        <React.Suspense fallback={null}>
+          <FinOpsDashboard />
+        </React.Suspense>
+      </MainLayout>
+    );
+  }
+
+  return <LoginPage onNavigate={navigate} />;
 }
 
 export default App;
