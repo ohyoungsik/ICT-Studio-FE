@@ -10,6 +10,14 @@ export type SignupPayload = {
   confirmPassword: string;
 };
 
+export type AuthUser = {
+  id: string;
+  name: string;
+  email: string;
+};
+
 export type AuthResult = {
   ok: true;
+  user: AuthUser;
+  token?: string;
 };

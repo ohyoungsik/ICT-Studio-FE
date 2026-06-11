@@ -6,8 +6,9 @@ import { MyTicketsPage } from './pages/Tickets/MyTicketsPage';
 import { SeatSelectionPage } from './pages/Tickets/SeatSelectionPage';
 import { SignupPage } from './pages/auth/SignupPage';
 import { TicketPage } from './pages/Tickets/TicketPage';
-import { concerts, mockBookings } from './pages/Tickets/ticketMockData';
-import type { Booking, BookingDraft } from './types/ticket.type';
+import { isAuthenticated } from './services/auth.service';
+import { createBooking, getConcerts, getMyBookings } from './services/ticket.service';
+import type { Booking, BookingDraft, Concert } from './types/ticket.type';
 
 const FinOpsDashboard = React.lazy(() => import('./pages/finops'));
 
@@ -31,26 +32,48 @@ function getActivePath(path: string) {
   return '/tickets';
 }
 
-function getTotalPrice(concertId: string, seatIds: string[]) {
-  const concert = concerts.find((concertItem) => concertItem.id === concertId);
-
-  if (!concert) {
-    return 0;
-  }
-
-  return concert.seats
-    .filter((seat) => seatIds.includes(seat.id))
-    .reduce((total, seat) => total + seat.price, 0);
-}
-
 function App() {
   const [path, setPath] = React.useState(getCurrentPath);
   const [bookingDraft, setBookingDraft] = React.useState<BookingDraft | null>(null);
-  const [bookings, setBookings] = React.useState<Booking[]>(mockBookings);
+  const [bookings, setBookings] = React.useState<Booking[]>([]);
+  const [concerts, setConcerts] = React.useState<Concert[]>([]);
+  const [isLoadingConcerts, setIsLoadingConcerts] = React.useState(false);
+  const [isLoadingBookings, setIsLoadingBookings] = React.useState(false);
+  const [appError, setAppError] = React.useState('');
 
   const navigate = React.useCallback((nextPath: string) => {
     window.history.pushState({}, '', nextPath);
     setPath(nextPath);
+  }, []);
+
+  const loadConcerts = React.useCallback(async () => {
+    setIsLoadingConcerts(true);
+    setAppError('');
+
+    try {
+      setConcerts(await getConcerts());
+    } catch (error) {
+      setAppError(error instanceof Error ? error.message : '공연 목록을 불러오지 못했습니다.');
+    } finally {
+      setIsLoadingConcerts(false);
+    }
+  }, []);
+
+  const loadBookings = React.useCallback(async () => {
+    if (!isAuthenticated()) {
+      setBookings([]);
+      return;
+    }
+
+    setIsLoadingBookings(true);
+
+    try {
+      setBookings(await getMyBookings());
+    } catch (error) {
+      setAppError(error instanceof Error ? error.message : '예매 내역을 불러오지 못했습니다.');
+    } finally {
+      setIsLoadingBookings(false);
+    }
   }, []);
 
   React.useEffect(() => {
@@ -67,11 +90,32 @@ function App() {
     };
   }, []);
 
+  React.useEffect(() => {
+    if (path !== '/' && path !== '/login' && path !== '/signup') {
+      void loadConcerts();
+    }
+  }, [loadConcerts, path]);
+
+  React.useEffect(() => {
+    if (path === '/my-tickets') {
+      void loadBookings();
+    }
+  }, [loadBookings, path]);
+
   const renderWithLayout = (children: React.ReactNode) => (
     <MainLayout activePath={getActivePath(path)} onNavigate={navigate}>
+      {appError ? <p className="field-error">{appError}</p> : null}
       {children}
     </MainLayout>
   );
+
+  const renderTicketList = () => {
+    if (isLoadingConcerts) {
+      return renderWithLayout(<main className="tickets-page">공연 목록을 불러오는 중입니다.</main>);
+    }
+
+    return renderWithLayout(<TicketPage concerts={concerts} onBook={handleStartBooking} />);
+  };
 
   const handleStartBooking = (concertId: string) => {
     setBookingDraft(null);
@@ -83,26 +127,22 @@ function App() {
     navigate(`/tickets/${concertId}`);
   };
 
-  const handleCompleteBooking = (concertId: string) => {
-    const concert = concerts.find((concertItem) => concertItem.id === concertId);
-
-    if (!concert || !bookingDraft || bookingDraft.concertId !== concertId) {
+  const handleCompleteBooking = async (concertId: string) => {
+    if (!bookingDraft || bookingDraft.concertId !== concertId) {
       return;
     }
 
-    const nextBooking: Booking = {
-      id: `booking-${concertId}-${Date.now()}`,
-      concertId,
-      concertTitle: concert.title,
-      seats: bookingDraft.seats,
-      totalPrice: getTotalPrice(concertId, bookingDraft.seats),
-      booker: '홍길동',
-      bookedAt: '2026-06-07',
-    };
+    setAppError('');
 
-    setBookings((currentBookings) => [nextBooking, ...currentBookings]);
-    setBookingDraft(null);
-    navigate('/my-tickets');
+    try {
+      const nextBooking = await createBooking(concertId, bookingDraft.seats);
+      setBookings((currentBookings) => [nextBooking, ...currentBookings]);
+      setBookingDraft(null);
+      await loadConcerts();
+      navigate('/my-tickets');
+    } catch (error) {
+      setAppError(error instanceof Error ? error.message : '예매를 완료하지 못했습니다.');
+    }
   };
 
   if (path === '/' || path === '/login') {
@@ -114,7 +154,7 @@ function App() {
   }
 
   if (path === '/tickets') {
-    return renderWithLayout(<TicketPage concerts={concerts} onBook={handleStartBooking} />);
+    return renderTicketList();
   }
 
   const bookingMatch = path.match(/^\/booking\/([^/]+)$/);
@@ -123,8 +163,12 @@ function App() {
     const concertId = bookingMatch[1];
     const concert = concerts.find((concertItem) => concertItem.id === concertId);
 
+    if (isLoadingConcerts) {
+      return renderWithLayout(<main className="booking-page">좌석 정보를 불러오는 중입니다.</main>);
+    }
+
     if (!concert) {
-      return renderWithLayout(<TicketPage concerts={concerts} onBook={handleStartBooking} />);
+      return renderTicketList();
     }
 
     return renderWithLayout(
@@ -142,8 +186,12 @@ function App() {
     const concertId = confirmationMatch[1];
     const concert = concerts.find((concertItem) => concertItem.id === concertId);
 
+    if (isLoadingConcerts) {
+      return renderWithLayout(<main className="booking-page">예매 정보를 불러오는 중입니다.</main>);
+    }
+
     if (!concert) {
-      return renderWithLayout(<TicketPage concerts={concerts} onBook={handleStartBooking} />);
+      return renderTicketList();
     }
 
     const matchingDraft = bookingDraft?.concertId === concertId ? bookingDraft : null;
@@ -153,13 +201,17 @@ function App() {
         concert={concert}
         draft={matchingDraft}
         onBackToSeats={() => navigate(`/booking/${concertId}`)}
-        onComplete={() => handleCompleteBooking(concertId)}
+        onComplete={() => void handleCompleteBooking(concertId)}
         onMyTickets={() => navigate('/my-tickets')}
       />,
     );
   }
 
   if (path === '/my-tickets') {
+    if (isLoadingBookings) {
+      return renderWithLayout(<main className="tickets-page">예매 내역을 불러오는 중입니다.</main>);
+    }
+
     return renderWithLayout(<MyTicketsPage bookings={bookings} />);
   }
 

@@ -54,6 +54,7 @@ export function SignupPage({ onNavigate }: SignupPageProps) {
   const [password, setPassword] = React.useState('');
   const [confirmPassword, setConfirmPassword] = React.useState('');
   const [errors, setErrors] = React.useState<SignupErrors>({});
+  const [submitError, setSubmitError] = React.useState('');
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -66,10 +67,17 @@ export function SignupPage({ onNavigate }: SignupPageProps) {
       return;
     }
 
+    setSubmitError('');
     setIsSubmitting(true);
-    await signup({ name, email, password, confirmPassword });
-    setIsSubmitting(false);
-    onNavigate('/login');
+
+    try {
+      await signup({ name, email, password, confirmPassword });
+      onNavigate('/login');
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : '회원가입에 실패했습니다.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -77,8 +85,8 @@ export function SignupPage({ onNavigate }: SignupPageProps) {
       <section className="auth-shell" aria-labelledby="signup-title">
         <div className="auth-brand">
           <p className="auth-brand__eyebrow">ICT Ticketing</p>
-          <h1>빠르게 시작하는 티켓 예매 운영</h1>
-          <p>계정을 만든 뒤 로그인 화면에서 티켓팅 페이지로 이동합니다.</p>
+          <h1>빠르게 시작하는 공연 예매 운영</h1>
+          <p>계정을 만든 뒤 로그인 화면에서 공연 페이지로 이동합니다.</p>
         </div>
 
         <div className="auth-card">
@@ -160,6 +168,7 @@ export function SignupPage({ onNavigate }: SignupPageProps) {
             <button type="submit" disabled={isSubmitting}>
               {isSubmitting ? '가입 중...' : '회원가입'}
             </button>
+            {submitError ? <small className="field-error">{submitError}</small> : null}
           </form>
 
           <p className="auth-switch">

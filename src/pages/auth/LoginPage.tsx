@@ -32,6 +32,7 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
   const [errors, setErrors] = React.useState<LoginErrors>({});
+  const [submitError, setSubmitError] = React.useState('');
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -44,10 +45,17 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
       return;
     }
 
+    setSubmitError('');
     setIsSubmitting(true);
-    await login({ email, password });
-    setIsSubmitting(false);
-    onNavigate('/tickets');
+
+    try {
+      await login({ email, password });
+      onNavigate('/tickets');
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : '로그인에 실패했습니다.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -55,14 +63,14 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
       <section className="auth-shell" aria-labelledby="login-title">
         <div className="auth-brand">
           <p className="auth-brand__eyebrow">ICT Ticketing</p>
-          <h1>콘서트 티켓 운영을 위한 모던 대시보드</h1>
-          <p>티켓 예매 화면과 FinOps 대시보드를 한 곳에서 확인하세요.</p>
+          <h1>콘서트 예매 운영을 위한 모던 대시보드</h1>
+          <p>공연 예매 화면과 FinOps 대시보드를 한 곳에서 확인하세요.</p>
         </div>
 
         <div className="auth-card">
           <div className="auth-copy">
             <p className="auth-eyebrow">로그인</p>
-            <h2 id="login-title">계정에 로그인</h2>
+            <h2 id="login-title">계정으로 로그인</h2>
           </div>
 
           <form className="auth-form" onSubmit={handleSubmit} noValidate>
@@ -104,6 +112,7 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
             <button type="submit" disabled={isSubmitting}>
               {isSubmitting ? '로그인 중...' : '로그인'}
             </button>
+            {submitError ? <small className="field-error">{submitError}</small> : null}
           </form>
 
           <p className="auth-switch">
