@@ -26,3 +26,43 @@ jobs:
       - name: Push Image
         run: |
           docker push ohyoungsik/ict-studio-fe:latest
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ vars.AWS_REGION || 'ap-northeast-2' }}
+
+      - name: Resolve App Auto Scaling Group
+        id: app-asg
+        env:
+          APP_ASG_NAME: ${{ vars.APP_ASG_NAME }}
+          ASG_TAG_ENVIRONMENT: ${{ vars.ASG_TAG_ENVIRONMENT || 'prod' }}
+          ASG_TAG_ROLE: ${{ vars.ASG_TAG_ROLE || 'app' }}
+          ASG_TAG_NAME: ${{ vars.ASG_TAG_NAME || 'prod-ict-private-app' }}
+        run: |
+          set -euo pipefail
+
+          if [ -n "${APP_ASG_NAME}" ]; then
+            echo "asg_name=${APP_ASG_NAME}" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          ASG_NAME="$(
+            aws autoscaling describe-auto-scaling-groups \
+              --query "AutoScalingGroups[?Tags[?Key=='Environment' && Value=='${ASG_TAG_ENVIRONMENT}'] && Tags[?Key=='Role' && Value=='${ASG_TAG_ROLE}'] && Tags[?Key=='Name' && Value=='${ASG_TAG_NAME}']].AutoScalingGroupName | [0]" \
+              --output text
+          )"
+
+          if [ -z "${ASG_NAME}" ] || [ "${ASG_NAME}" = "None" ]; then
+            echo "Could not resolve App Auto Scaling Group from repository variable APP_ASG_NAME or ASG tags." >&2
+            exit 1
+          fi
+
+          echo "asg_name=${ASG_NAME}" >> "$GITHUB_OUTPUT"
+
+      - name: Start ASG Instance Refresh
+        run: |
+          aws autoscaling start-instance-refresh \
+            --auto-scaling-group-name "${{ steps.app-asg.outputs.asg_name }}"
