@@ -70,7 +70,7 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
         <div className="auth-card">
           <div className="auth-copy">
             <p className="auth-eyebrow">로그인</p>
-            <h2 id="login-title">계정으로 로그인</h2>
+            <h2 id="login-title">계정으로 로그인222</h2>
           </div>
 
           <form className="auth-form" onSubmit={handleSubmit} noValidate>
