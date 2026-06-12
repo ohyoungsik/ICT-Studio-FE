@@ -64,5 +64,19 @@ jobs:
 
       - name: Start ASG Instance Refresh
         run: |
+          set -euo pipefail
+
+          IN_PROGRESS_REFRESH_ID="$(
+            aws autoscaling describe-instance-refreshes \
+              --auto-scaling-group-name "${{ steps.app-asg.outputs.asg_name }}" \
+              --query "InstanceRefreshes[?Status=='Pending' || Status=='InProgress' || Status=='Cancelling' || Status=='RollbackInProgress'].InstanceRefreshId | [0]" \
+              --output text
+          )"
+
+          if [ -n "${IN_PROGRESS_REFRESH_ID}" ] && [ "${IN_PROGRESS_REFRESH_ID}" != "None" ]; then
+            echo "Instance refresh ${IN_PROGRESS_REFRESH_ID} is already in progress. Skipping new refresh."
+            exit 0
+          fi
+
           aws autoscaling start-instance-refresh \
             --auto-scaling-group-name "${{ steps.app-asg.outputs.asg_name }}"
